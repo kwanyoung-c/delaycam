@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d10">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="딜레이캠">
+<meta name="description" content="체육 수업·운동 자세 교정을 위한 딜레이 카메라">
+<title>딜레이 카메라</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- 카메라 원본 스트림 (화면에는 보이지 않음, 캔버스로 처리) -->
+<video id="src" playsinline webkit-playsinline muted autoplay></video>
+
+<div id="app" class="portrait">
+  <div id="main">
+    <section id="stage">
+      <canvas id="view"></canvas>
+
+      <div id="hud">
+        <div class="hud-left">
+          <span id="recPill" class="pill rec"><i></i><b>REC</b></span>
+          <span id="modePill" class="pill">LIVE</span>
+        </div>
+        <span id="lagPill" class="pill big">-5.0s</span>
+      </div>
+
+      <div id="wait" hidden>
+        <div class="wait-num" id="waitNum">5</div>
+        <div class="wait-txt" id="waitTxt">초 후 지연 영상 재생</div>
+      </div>
+
+      <div id="start">
+        <div class="start-card">
+          <div class="logo">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+          </div>
+          <h1>딜레이 카메라</h1>
+          <p>동작을 한 뒤 몇 초 늦게 재생되는 화면으로<br>자신의 자세를 바로 확인하세요.</p>
+          <button id="startBtn" class="primary">카메라 시작</button>
+          <p class="hint" id="startHint">카메라 권한을 허용해 주세요.</p>
+        </div>
+      </div>
+    </section>
+
+    <div id="timeline">
+      <span class="tlt" id="tlLeft">-60s</span>
+      <div id="track" aria-label="타임라인">
+        <div id="tlFill"></div>
+        <div id="tlLoop"></div>
+        <div id="tlLive"></div>
+        <div id="tlA" class="mark" hidden></div>
+        <div id="tlB" class="mark" hidden></div>
+        <div id="tlHead"></div>
+      </div>
+      <span class="tlt" id="tlRight">지금</span>
+    </div>
+  </div>
+
+  <section id="panel" class="scroll">
+    <div id="controls">
+      <button class="b" id="bPlay"><svg viewBox="0 0 24 24"><g class="ic-pause"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></g><path class="ic-play" d="M7 4.5l12 7.5-12 7.5z"/></svg><span class="l">멈춤</span></button>
+      <button class="b" id="bBack"><svg viewBox="0 0 24 24"><path d="M18 6l-8 6 8 6z"/><path d="M6 6v12"/></svg><span class="l">이전</span></button>
+      <button class="b" id="bFwd"><svg viewBox="0 0 24 24"><path d="M6 6l8 6-8 6z"/><path d="M18 6v12"/></svg><span class="l">다음</span></button>
+      <button class="b" id="bSpeed"><span class="big" id="speedTxt">1x</span><span class="l">속도</span></button>
+      <button class="b" id="bLive"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5" class="fill"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg><span class="l">LIVE</span></button>
+      <button class="b" id="bA"><span class="big">A</span><span class="l">시작점</span></button>
+      <button class="b" id="bB"><span class="big">B</span><span class="l">끝점</span></button>
+      <button class="b" id="bLoop"><svg viewBox="0 0 24 24"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg><span class="l">반복</span></button>
+      <button class="b" id="bRec"><svg viewBox="0 0 24 24"><circle class="ic-rec fill" cx="12" cy="12" r="6"/><g class="ic-frz"><rect x="7" y="6" width="3.5" height="12" rx="1"/><rect x="13.5" y="6" width="3.5" height="12" rx="1"/></g></svg><span class="l" id="recTxt">기록중</span></button>
+      <button class="b" id="bDelay"><span class="big" id="delayTxt">5s</span><span class="l">지연</span></button>
+      <button class="b" id="bCam"><svg viewBox="0 0 24 24"><path d="M3 8h3.5L8.5 5h7l2 3H21v11H3z"/><path d="M9.2 12.2a3 3 0 0 1 5.3-1.4M14.8 13.8a3 3 0 0 1-5.3 1.4"/><path d="M14.8 9.6v1.6h-1.6M9.2 16.4v-1.6h1.6"/></svg><span class="l">카메라</span></button>
+      <button class="b" id="bRotate"><svg viewBox="0 0 24 24"><rect x="8" y="9" width="9" height="13" rx="1.5"/><path d="M3 12a8 8 0 0 1 13.5-6"/><path d="M17 2v4.5h-4.5"/></svg><span class="l" id="rotTxt">가로로</span></button>
+      <button class="b" id="bSet"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span class="l">설정</span></button>
+    </div>
+  </section>
+
+  <div id="sheet" hidden>
+    <div class="sheet-card">
+      <div class="sheet-head">
+        <h2>설정</h2>
+        <button class="close" id="sheetClose" aria-label="닫기">✕</button>
+      </div>
+      <div class="sheet-body scroll" id="sheetBody"></div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
